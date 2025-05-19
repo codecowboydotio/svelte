@@ -1,4 +1,5 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+import requests
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -12,6 +13,7 @@ def foo():
         "data": {
             "answer": 42,
             "description": "The Answer to the Ultimate Question of Life, the Universe, and Everything"
+            "data": request.json
         }
     })
 
