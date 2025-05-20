@@ -8,13 +8,13 @@ app = Flask(__name__)
 def foo():
     if request.method == 'POST':
         # For POST requests, return the data that was sent
-        received_data = request.get_json(force=True, silent=True) or {}
-        
+        received_data = request.get_json(force=True)
         return jsonify({
             "status": "success",
             "message": "Data received successfully",
             "received_data": received_data,
-            "data_type": str(type(received_data))
+            "data_type": str(type(received_data)),
+            "test": received_data['foo']
         })
     else:
         # For GET requests, return the original response
