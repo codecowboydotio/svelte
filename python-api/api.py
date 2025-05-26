@@ -18,12 +18,32 @@ import shutil
 # Initialize Flask application
 app = Flask(__name__)
 
+# Load the environment variables from the .env file.
 load_dotenv()
 my_api_key = os.getenv("my_api_key")
 
+# Initialize the array for the conversation between the LLM and the agent
+messages_array=[]
+
+
+# Create a new anthropic client
 client = anthropic.Anthropic(
     api_key=my_api_key
 )
+
+
+# Function to send messages to the LLM. 
+#This only requires BOTH the question and the answer to be added to the messages array.
+# 
+# The example below appends a message to the array and asks a question
+#   messages_array.append({"role": "user", "content": "what is one plus one"})
+#   foo = send_message(messages_array)
+#
+# In order to add the response, add the response from the question to the array.
+#   messages_array.append({"role": "assistant", "content": foo.content[0].text})
+# 
+# Each Q/A pair will be appended and the conversation history will be maintained. 
+# There is a tradeoff between the size of the context window and the size of the array per Q/A thread.
 
 
 def send_message(messages_array):
@@ -40,15 +60,6 @@ def send_message(messages_array):
   )
   return message
 
-messages_array=[]
-messages_array.append({"role": "user", "content": "what is one plus one"})
-print("sending message")
-foo = send_message(messages_array)
-
-# Add Claude's response to the history
-messages_array.append({"role": "assistant", "content": foo.content[0].text})
-print(messages_array)
-print("\n\n")
 
 
 # Enable CORS for all routes
@@ -71,15 +82,31 @@ def foo():
         received_data = request.get_json(force=True)
         policy_name = received_data['entities'][0]['policies'][0]['name']
         deployment_name = received_data['entities'][0]['policyEvents'][0]['eventLabels']['kubernetes.deployment.name'],
-        git.Repo.clone_from("https://github.com/codecowboydotio/swapi-json-server","/tmp/foo") 
+        try:
+          git.Repo.clone_from("https://github.com/codecowboydotio/swapi-json-server","/tmp/foo") 
+        except:
+          response = jsonify({
+            "status": "error",
+            "message": "There was a problem cloning the repo",
+        })
+        messages_array.append({"role": "user", "content": "what is one plus one"})
+        print("sending message")
+        foo = send_message(messages_array)
+        
+        # Add Claude's response to the history
+        messages_array.append({"role": "assistant", "content": foo.content[0].text})
+        print(messages_array)
+        print("\n\n")
+
         response = jsonify({
             #"1-test": received_data['entities'][0]['policies'][0]['name'],
             "image_name": received_data['entities'][0]['policyEvents'][0]['eventLabels']['container.image.repo'],
             "deployment_name": received_data['entities'][0]['policyEvents'][0]['eventLabels']['kubernetes.deployment.name'],
             "status": "success",
             "message": "Data received successfully",
+            "ai convo": messages_array,
             #"received_data": received_data,
-            "data_type": str(type(received_data)),
+            #"data_type": str(type(received_data)),
         })
         try:
           mydir="/tmp/foo"
