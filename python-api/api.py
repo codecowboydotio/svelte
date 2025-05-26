@@ -9,7 +9,7 @@ from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from anthropic import Anthropic
+import anthropic
 from dotenv import load_dotenv
 import os
 import sys
@@ -17,6 +17,39 @@ import shutil
 
 # Initialize Flask application
 app = Flask(__name__)
+
+load_dotenv()
+my_api_key = os.getenv("my_api_key")
+
+client = anthropic.Anthropic(
+    api_key=my_api_key
+)
+
+
+def send_message(messages_array):
+  message = client.messages.create(
+      model="claude-opus-4-20250514",
+      max_tokens=1024,
+      messages=messages_array,
+      #tools=[{
+      #    "type": "web_search_20250305",
+      #    "name": "web_search",
+      #    "max_uses": 1,
+      #    "allowed_domains": ["github.com"],
+      #}]
+  )
+  return message
+
+messages_array=[]
+messages_array.append({"role": "user", "content": "what is one plus one"})
+print("sending message")
+foo = send_message(messages_array)
+
+# Add Claude's response to the history
+messages_array.append({"role": "assistant", "content": foo.content[0].text})
+print(messages_array)
+print("\n\n")
+
 
 # Enable CORS for all routes
 CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
