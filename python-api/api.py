@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import os
 import sys
 import shutil
+import logging
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -46,20 +47,34 @@ client = anthropic.Anthropic(
 # There is a tradeoff between the size of the context window and the size of the array per Q/A thread.
 
 
+
 def send_message(messages_array):
-  message = client.messages.create(
+  message = client.beta.messages.create(
       model="claude-opus-4-20250514",
       max_tokens=1024,
       messages=messages_array,
       #tools=[{
       #    "type": "web_search_20250305",
       #    "name": "web_search",
-      #    "max_uses": 1,
-      #    "allowed_domains": ["github.com"],
-      #}]
+      #    "max_uses": 3,
+      #    #"allowed_domains": ["github.com"],
+      #}],
+      #mcp_servers=[{
+      #  "type": "url",
+      #  "url": "https://someurl.com",
+      #  "name": "example-mcp",
+      #}],
+      #betas=["mcp-client-2025-04-04"]
   )
   return message
 
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d %H:%M',
+                    filename='./myapp.log',
+                    filemode='w')
+api_error_log = logging.getLogger('api.errors')
 
 
 # Enable CORS for all routes
@@ -113,6 +128,7 @@ def foo():
           shutil.rmtree(mydir)
         except OSError as e:
           print("Error: %s - %s." % (e.filename, e.strerror))
+          api_error_log.debug('Testing debug')
         return response
     
     else:
